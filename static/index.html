@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MELKERS DEMO — Shareable Demo</title>
+  <link rel="stylesheet" href="/static/styles.css?v=0_8_0">
+</head>
+<body>
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <div class="auth-logo">E2</div>
+    <h1 id="authTitle">MELKERS DEMO · DEMO</h1>
+    <p id="authLead">MELKERS NYA AFFÄRSSYSTEM · kontrollerar inloggning…</p>
+    <div id="authBody"><div class="auth-loading">Laddar…</div></div>
+  </div>
+</div>
+<div class="app" id="erpApp" style="display:none">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-row">
+        <div class="logo">E2</div>
+        <div><strong>MELKERS DEMO</strong><small>v0.8.8 · MELKERS FÖRSTA DEMO</small></div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-page="dashboard" data-permission="dashboard"><span class="nav-icon">▦</span>Översikt</button>
+      <button class="nav-btn" data-page="order" data-permission="order_edit"><span class="nav-icon">＋</span>Ny order</button>
+      <button class="nav-btn" data-page="history" data-permission="history"><span class="nav-icon">◴</span>Orderhistorik</button>
+      <button class="nav-btn" data-page="customers" data-permission="customer_read"><span class="nav-icon">◎</span>Kunder</button>
+      <button class="nav-btn" data-page="articles" data-permission="article_read"><span class="nav-icon">▤</span>Artiklar</button>
+      <button class="nav-btn" data-page="pricing" data-permission="pricing_read"><span class="nav-icon">¤</span>Prissättning</button>
+      <button class="nav-btn" data-page="purchasing" data-permission="purchasing_read"><span class="nav-icon">◇</span>Inköp</button>
+      <button class="nav-btn" data-page="production" data-permission="production_read"><span class="nav-icon">✓</span>Produktion</button>
+      <button class="nav-btn" data-page="transport" data-permission="transport_read"><span class="nav-icon">⇢</span>Transport</button>
+      <button class="nav-btn" data-page="labels" data-permission="labels"><span class="nav-icon">▧</span>Etiketter</button>
+      <button class="nav-btn" data-page="fortnox" data-permission="fortnox_read"><span class="nav-icon">ƒ</span>Fakturering</button>
+      <button class="nav-btn" data-page="statistics" data-permission="statistics_read"><span class="nav-icon">⌁</span>Statistik</button>
+      <button class="nav-btn" data-page="users" data-permission="admin"><span class="nav-icon">♙</span>Användare</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div id="sideMeta">Laddar databas…</div>
+      <div style="margin-top:8px"><strong>DEMO:</strong> OFFLINE.</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title"><strong id="topTitle">Översikt</strong><span id="topSubtitle">MELKERS DEMO</span></div>
+      <div class="top-actions"><span class="pill demo-pill">DEMO · OFFLINE DATA</span>
+        <span class="pill" id="dbStatus">● Databas</span>
+        <span class="pill" id="clock"></span>
+        <button class="user-pill" id="currentUserBtn" onclick="toggleUserMenu()"><span class="user-avatar" id="userAvatar">?</span><span><strong id="currentUserName">—</strong><small id="currentUserRole">—</small></span>⌄</button>
+        <div class="user-menu" id="userMenu"><button onclick="logoutERP()">Logga ut</button></div>
+      </div>
+    </header>
+
+    <div class="content">
+      <section class="page active" id="page-dashboard">
+        <div class="page-head">
+          <div><h1>Översikt</h1><p>order, produktion och historik.</p></div>
+          <div class="row-actions"><button class="btn primary" onclick="goPage('order')">＋ Ny order</button></div>
+        </div>
+        <div class="kpi-grid" id="dashboardKpis"></div>
+        <div class="dashboard-grid">
+          <div class="stack">
+            <div class="card">
+              <div class="card-title"><h2>Senaste order</h2><button class="btn ghost" onclick="goPage('history')">Visa alla →</button></div>
+              <div class="table-wrap" id="recentOrders"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><h2>Volym — senaste 30 dagarna i -underlaget</h2><span class="small muted" id="volumePeriod"></span></div>
+              <div class="card-body" id="volumeBars"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><h2>Senaste händelser</h2></div>
+            <div class="card-body" id="activityFeed"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-order">
+        <div class="page-head">
+          <div><h1>Ny order</h1></div>
+          <div class="row-actions">
+            <span class="badge gray" id="draftStateBadge">Ny order</span>
+            <span class="badge blue" id="draftOrderNumber">Order —</span>
+            <button class="btn danger-soft" id="clearOrderBtn" onclick="clearOrderDraft(true)">Rensa order</button>
+          </div>
+        </div>
+        <div class="order-shell">
+          <div class="card">
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="field span2">
+                  <label>Kund</label>
+                  <input id="orderCustomerInput" type="text" autocomplete="off" placeholder="Sök kundnr eller namn…">
+                  <div class="combo-menu" id="customerMenu"></div>
+                  <input id="orderCustomerNo" type="hidden">
+                </div>
+                <div class="field">
+                  <label>Orderdatum</label><input id="orderDate" type="date">
+                </div>
+                <div class="field">
+                  <label>Leveransdatum</label><input id="deliveryDate" type="date">
+                </div>
+                <div class="field">
+                  <label>Order / FS nr</label><input id="orderNo" type="number">
+                </div>
+                <div class="field">
+                  <label>Vår referens</label><input id="internalReference" type="text">
+                </div>
+                <div class="field">
+                  <label>Kundreferens</label><input id="customerReference" type="text">
+                </div>
+                <div class="field">
+                  <label>Status</label>
+                  <select id="orderStatus">
+                    <option>Ny</option><option>Orderbekräftad</option><option>Fortnox</option>
+                    <option>Ej Fortnox</option><option>Fakturerad</option><option>Inlevererad</option>
+                  </select>
+                </div>
+                <div class="field span4">
+                  <label>Info</label><textarea id="orderInfo" placeholder="Orderinformation…"></textarea>
+                </div>
+              </div>
+
+              <div class="order-lines">
+                <div class="order-grid-header">
+                  <div>Artikel</div><div>Benämning</div><div>Antal</div><div>Pris</div><div>Kg</div><div>Pall</div><div>PPL</div><div>Varuvärde</div><div>Station</div><div></div>
+                </div>
+                <div id="orderLines"></div>
+              </div>
+              <div class="order-footer">
+                <div class="keyboard-tip"><strong>Tangentbord:</strong> TAB eller Enter går vidare</div>
+                <button class="btn primary" id="saveOrderBtn" onclick="saveOrder()">SPARA ORDER</button>
+              </div>
+            </div>
+          </div>
+
+          <aside class="stack">
+            <div class="card">
+              <div class="card-title"><h2>Ordersumma</h2></div>
+              <div class="card-body totals">
+                <div class="total-row"><span>Varor</span><span class="total-num" id="sumGoods">0,00 kr</span></div>
+                <div class="total-row"><span>Pant</span><span class="total-num" id="sumDeposit">0,00 kr</span></div>
+                <div class="total-row"><span>Vikt</span><span class="total-num" id="sumKg">0 kg</span></div>
+                <div class="total-row"><span>Pall</span><span class="total-num" id="sumPallets">0</span></div>
+                <div class="total-row"><span>PPL</span><span class="total-num" id="sumPpl">0</span></div>
+                <div class="total-row big"><span>Summa*</span><span class="total-num" id="sumTotal">0,00 kr</span></div>
+                <div class="small muted">* Moms/avrundning från dagens /Fortnox-flöde är inte aktiverad i Melkers Demo.......</div>
+              </div>
+            </div>
+            <div class="notice blue" id="customerInfo">Välj kund för att se standardinfo.</div>
+            <div class="card" id="recommendationCard">
+              <div class="card-title"><h3>Vanliga för kunden</h3><span class="small muted">Historik + senaste köp</span></div>
+              <div class="card-body" id="customerRecommendations"><div class="small muted">Välj kund så föreslår Melker artiklar som kunden brukar köpa.</div></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><h3>Material / emballage</h3></div>
+              <div class="card-body" id="draftMaterials"><div class="small muted">Beräknas från artikel-BOM när rader fylls i.</div></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="page" id="page-history">
+        <div class="page-head"><div><h1>Orderhistorik</h1><p>Kunder, ordernummer, priser och volymer.</p></div></div>
+        <div class="card">
+          <div class="card-body">
+            <div class="filters">
+              <input id="historySearch" type="search" placeholder="Melker, Kundnr (201), ordernr, kundnamn eller ref:DEMO…">
+              <select id="historySource"><option value="all">Alla källor</option><option value="erp_v2">MELKERS DEMO</option><option value="legacy"> historik</option></select>
+              <select id="historyStatus"><option value="all">Alla statusar</option></select>
+              <select id="historyWeekday">
+                <option value="all">Alla veckodagar</option><option value="1">Måndag</option><option value="2">Tisdag</option>
+                <option value="3">Onsdag</option><option value="4">Torsdag</option><option value="5">Fredag</option>
+                <option value="6">Lördag</option><option value="0">Söndag</option>
+              </select>
+              <button class="btn" onclick="resetHistoryFilters()">Rensa</button>
+              <button class="btn -export" onclick="exportHistory()" title="Exportera order">⇩ Exportera till </button>
+            </div>
+            <div class="table-wrap" id="historyTable"></div>
+            <div class="pagination" id="historyPagination"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-customers">
+        <div class="page-head">
+          <div><h1>Kunder</h1><p>Skapa, redigera och arkivera kunder.</p></div>
+          <div class="row-actions"><button class="btn primary" onclick="openCustomerEditor()">＋ Ny kund</button></div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="master-toolbar">
+              <input id="customerSearch" type="search" placeholder="Sök kundnr, namn eller adress…">
+              <label class="check"><input id="showArchivedCustomers" type="checkbox" onchange="loadCustomerMasterPage()"> Visa arkiverade</label>
+            </div>
+            <div class="list-grid" id="customerList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-articles">
+        <div class="page-head">
+          <div><h1>Artiklar</h1><p>Masterdata, produktion, etiketter och BOM.</p></div>
+          <div class="row-actions"><button class="btn primary" onclick="openArticleEditor()">＋ Ny artikel</button></div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="master-toolbar">
+              <input id="articleMasterSearch" type="search" placeholder="Sök artikelnummer eller benämning…">
+              <label class="check"><input id="showArchivedArticles" type="checkbox" onchange="loadArticleMasterPage()"> Visa arkiverade</label>
+            </div>
+            <div class="table-wrap" id="articleMasterTable"></div>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="page" id="page-pricing">
+        <div class="page-head">
+          <div><h1>Prislista</h1><p>Kundpriser och kampanjvillkor</p></div>
+          <div class="row-actions"><button class="btn primary" onclick="openPricingConditionEditor()">＋ Nytt prisvillkor</button></div>
+        </div>
+        <div class="notice blue" style="margin-bottom:14px"><strong>Prisdatum = leveransdatum.</strong> Orderraden sparar alltid det pris som faktiskt valdes, så gamla order ändras aldrig när prisvillkor ändras senare.</div>
+        <div class="kpi-grid pricing-kpis" id="pricingKpis"></div>
+        <div class="card">
+          <div class="card-body">
+            <div class="pricing-tabs">
+              <button class="pricing-tab active" data-pricing-tab="STANDARD" onclick="setPricingTab('STANDARD')">Kundpriser</button>
+              <button class="pricing-tab" data-pricing-tab="ARTICLE" onclick="setPricingTab('ARTICLE')">Pris per artikel</button>
+              <button class="pricing-tab" data-pricing-tab="CAMPAIGN" onclick="setPricingTab('CAMPAIGN')">Kampanjer</button>
+              <button class="pricing-tab" data-pricing-tab="EVENTS" onclick="setPricingTab('EVENTS')">Prislogg</button>
+            </div>
+            <div class="master-toolbar pricing-toolbar" id="pricingToolbar">
+              <input id="pricingSearch" type="search" placeholder="Sök kund, artikel eller kampanj…">
+              <input id="pricingDate" type="date" style="display:none" title="Prisdatum">
+              <select id="pricingStatus"><option value="all">Alla</option><option value="current">Aktiva nu</option><option value="future">Framtida</option><option value="expired">Utgångna</option><option value="inactive">Arkiverade</option></select>
+            </div>
+            <div class="table-wrap" id="pricingTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-purchasing">
+        <div class="page-head">
+          <div><h1>Inköp</h1><p>Materialdata, leverantörer, info records och faktisk inköpshistorik.</p></div>
+          <div class="row-actions"><button class="btn" onclick="openPurchasingMaterialEditor()">＋ Nytt material</button><button class="btn" onclick="openSupplierEditor()">＋ Ny leverantör</button><button class="btn" onclick="openInfoRecordEditor()">＋ Nytt info record</button><button class="btn primary" onclick="openPurchaseHistoryEditor()">＋ Registrera tidigare inköp</button></div>
+        </div>
+        <div class="notice blue" style="margin-bottom:14px"><strong>Det kommer......</strong> referensvärden från  <em>MAIN</em> (Saldo, SL/orderpunkt, MOQ, pris och beställt antal).</div>
+        <div class="card">
+          <div class="card-body">
+            <div class="pricing-tabs purchasing-tabs">
+              <button class="pricing-tab active" data-purchasing-tab="MATERIALS" onclick="setPurchasingTab('MATERIALS')">Materialmaster</button>
+              <button class="pricing-tab" data-purchasing-tab="SUPPLIERS" onclick="setPurchasingTab('SUPPLIERS')">Leverantörer</button>
+              <button class="pricing-tab" data-purchasing-tab="INFO" onclick="setPurchasingTab('INFO')">Info records</button>
+              <button class="pricing-tab" data-purchasing-tab="HISTORY" onclick="setPurchasingTab('HISTORY')">Inköpshistorik</button>
+            </div>
+
+            <div id="purchasingMaterialsPanel">
+              <div class="master-toolbar purchasing-info-toolbar">
+                <input id="materialMasterSearch" type="search" placeholder="Sök materialnummer, benämning eller leverantörsartikelnummer…">
+                <select id="materialMasterType" onchange="loadMaterialMasterPage()">
+                  <option value="all">Alla materialtyper</option>
+                  <option value="RETURN_PACKAGING">Returemballage</option>
+                  <option value="PACKAGING">Wellpapp / emballage</option>
+                  <option value="FILM">Plastfilm</option>
+                  <option value="LABEL">Etikett</option>
+                  <option value="PALLET">Pall</option>
+                  <option value="CONSUMABLE">Förbrukningsmaterial</option>
+                  <option value="RAW_MATERIAL">Råvara</option>
+                  <option value="SERVICE">Tjänst / kostnad</option>
+                  <option value="OTHER">Övrigt</option>
+                </select>
+                <label class="check"><input id="materialMasterPurchasableOnly" type="checkbox" onchange="loadMaterialMasterPage()"> Endast inköpsbara</label>
+                <label class="check"><input id="showArchivedMaterials" type="checkbox" onchange="loadMaterialMasterPage()"> Visa arkiverade</label>
+              </div>
+              <div class="table-wrap" id="materialMasterTable"></div>
+            </div>
+
+            <div id="purchasingSuppliersPanel" style="display:none">
+              <div class="master-toolbar">
+                <input id="supplierSearch" type="search" placeholder="Sök leverantörsnummer, namn, org.nr eller kontakt…">
+                <label class="check"><input id="showArchivedSuppliers" type="checkbox" onchange="loadSuppliersPage()"> Visa arkiverade</label>
+              </div>
+              <div class="table-wrap" id="supplierTable"></div>
+            </div>
+
+            <div id="purchasingInfoPanel" style="display:none">
+              <div class="master-toolbar purchasing-info-toolbar">
+                <input id="infoRecordSearch" type="search" placeholder="Sök material, leverantör eller leverantörens art.nr…">
+                <select id="infoRecordStatus" onchange="loadInfoRecordsPage()">
+                  <option value="all">Alla statusar</option>
+                  <option value="PREFERRED">Föredragen</option>
+                  <option value="APPROVED">Godkänd</option>
+                  <option value="BACKUP">Backup</option>
+                  <option value="BLOCKED">Spärrad</option>
+                </select>
+                <label class="check"><input id="showArchivedInfoRecords" type="checkbox" onchange="loadInfoRecordsPage()"> Visa arkiverade</label>
+              </div>
+              <div class="small muted purchasing-hint">sök materialnamn för att se alla möjliga leverantörer, eller ett leverantörsnummer för att se allt ni kan köpa därifrån.</div>
+              <div class="table-wrap" id="infoRecordTable"></div>
+            </div>
+
+            <div id="purchasingHistoryPanel" style="display:none">
+              <div class="master-toolbar purchasing-info-toolbar">
+                <input id="purchaseHistoryMaterialSearch" type="search" placeholder="Materialnummer eller materialnamn…">
+                <input id="purchaseHistorySupplierSearch" type="search" placeholder="Leverantörsnummer eller leverantörsnamn…">
+                <input id="purchaseHistoryReferenceSearch" type="search" placeholder="PO / referens…">
+                <input id="purchaseHistoryFrom" type="date" title="Från datum">
+                <input id="purchaseHistoryTo" type="date" title="Till datum">
+                <button class="btn" type="button" onclick="clearPurchaseHistoryFilters()">Rensa</button>
+              </div>
+              <div class="small muted purchasing-hint">inköpshistorik, inte nuvarande info-recordpris. Historiska inköp kan registreras manuellt, framtida PO kommer skapa historiken automatiskt.</div>
+              <div class="kpi-grid" id="purchaseHistoryKpis" style="margin-top:14px"></div>
+              <div class="table-wrap" id="purchaseHistoryTable"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="page" id="page-production">
+        <div class="page-head"><div><h1>Produktion</h1><p>Melkers aktuella produktion.</p></div><div class="row-actions"><button class="btn" onclick="loadProduction()">Uppdatera</button></div></div>
+        <div class="notice blue" style="margin-bottom:14px"><strong>v0.8.0 · Produktion.</strong> Ingen scanning eller etikettstatus ingår ännu.</div>
+        <div class="kpi-grid" id="productionKpis" style="margin-bottom:14px"></div>
+        <div class="production-layout">
+          <div id="productionOrders"></div>
+          <div class="card">
+            <div class="card-title"><h2>Senaste händelser</h2></div>
+            <div class="card-body" id="productionEvents"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-transport">
+        <div class="page-head"><div><h1>Transport</h1><p>Förberedelse för Tempcon / Opter bokning (bellas knapp) </p></div></div>
+        <div class="notice amber" style="margin-bottom:14px"><strong>MELKERS DEMO:</strong> inga riktiga transportbokningar skickas från MELKERS DEMO.</div>
+        <div class="card"><div class="table-wrap" id="transportTable"></div></div>
+      </section>
+
+      <section class="page" id="page-labels">
+        <div class="page-head">
+          <div><h1>etiketter</h1><p>fysiska palletiketter för produktion och marianne.</p></div>
+          <div class="row-actions"><button class="btn primary" id="printLabelsBtn" onclick="printCurrentLabels()" disabled>Skriv ut</button></div>
+        </div>
+        <div class="notice blue" style="margin-bottom:14px"><strong>DEMO:</strong> varje pall får ett ID. LIDL DEMO och ICA DEMO används för att prova specialmallar.</div>
+        <div class="card no-print" style="margin-bottom:14px"><div class="card-body">
+          <div class="field" style="max-width:420px"><label>Order</label><input id="labelOrderSearch" type="search" placeholder="Sök ordernummer eller kund…"></div>
+          <div id="labelOrderResults" style="margin-top:10px"></div>
+        </div></div>
+        <div class="card no-print" style="margin-bottom:14px"><div class="card-body">
+          <div class="card-title" style="padding:0 0 10px 0"><div><h2>Produktionsskanning</h2><div class="small muted">Skanna QR-koden eller skriv palletikettens ID och tryck Enter. PRINTED → PRODUCED.</div></div></div>
+          <div class="field" style="max-width:520px"><label>Palletikett</label><input id="productionScanInput" autocomplete="off" spellcheck="false" placeholder="PLT-98970-A110-001" onkeydown="if(event.key==='Enter'){event.preventDefault();scanProducedLabel()}"></div>
+          <div id="productionScanResult" style="margin-top:10px"></div>
+        </div></div>
+        <div id="labelPreview"></div>
+      </section>
+
+      <section class="page" id="page-fortnox">
+        <div class="page-head"><div><h1>Fakturering</h1><p>nuvarande -projektion och framtida fakturering.</p></div></div>
+        <div class="notice amber" style="margin-bottom:14px"><strong>Fakturering är avstängd.</strong> Vi använder denna sida för att verifiera mappningen innan någon riktig Fortnox-integration aktiveras.</div>
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-body">
+              <input id="fortnoxSearch" type="search" placeholder="Sök ordernummer eller kund…" style="margin-bottom:12px">
+              <div id="fortnoxOrders"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><h2>Payload preview</h2></div>
+            <div class="card-body"><div id="fortnoxNote" class="small muted" style="margin-bottom:10px">Välj en order.</div><pre class="json" id="fortnoxJson">{}</pre></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-statistics">
+        <div class="page-head"><div><h1>Statistik</h1><p>Order, volym, kunder, artiklar och produktion historik</p></div></div>
+        <div class="card stats-filter-card"><div class="card-body">
+          <div class="stats-filters">
+            <div class="field"><label>Från</label><input id="statsFrom" type="date"></div>
+            <div class="field"><label>Till</label><input id="statsTo" type="date"></div>
+            <div class="field"><label>Kund</label><select id="statsCustomer"><option value="">Alla kunder</option></select></div>
+            <div class="field"><label>Artikel</label><select id="statsArticle"><option value="">Alla artiklar</option></select></div>
+            <div class="field"><label>Veckodag</label><select id="statsWeekday"><option value="">Alla dagar</option><option value="1">Måndag</option><option value="2">Tisdag</option><option value="3">Onsdag</option><option value="4">Torsdag</option><option value="5">Fredag</option><option value="6">Lördag</option><option value="0">Söndag</option></select></div>
+            <div class="stats-filter-actions"><button class="btn primary" onclick="loadStatistics()">Uppdatera</button><button class="btn" onclick="resetStatistics()">Återställ</button></div>
+          </div>
+        </div></div>
+        <div class="kpi-grid stats-kpis" id="statsKpis"></div>
+        <div class="stats-layout">
+          <div class="card span2"><div class="card-title"><h2>Volym över tid</h2><span class="small muted" id="statsTrendLabel"></span></div><div class="card-body"><div id="statsTrend" class="stats-chart"></div></div></div>
+          <div class="card"><div class="card-title"><h2>Volym per veckodag</h2></div><div class="card-body" id="statsWeekdays"></div></div>
+          <div class="card"><div class="card-title"><h2>Stationer</h2></div><div class="card-body" id="statsStations"></div></div>
+          <div class="card"><div class="card-title"><h2>Största kunder</h2></div><div class="card-body" id="statsCustomers"></div></div>
+          <div class="card"><div class="card-title"><h2>Största produkter — kg</h2></div><div class="card-body" id="statsProducts"></div></div>
+          <div class="card span2"><div class="card-title"><h2>Mest beställda artiklar</h2></div><div class="card-body" id="statsArticles"></div></div>
+        </div>
+        <div class="notice blue stats-note" id="statsNotes"></div>
+      </section>
+
+      <section class="page" id="page-users">
+        <div class="page-head">
+          <div><h1>Användare & enheter</h1><p>Melkers Superuser konto, Kontorskonton, produktionsoperatörer, scannerterminaler och revisionslogg.</p></div>
+          <div class="row-actions"><button class="btn primary" onclick="openUserEditor()">＋ Ny användare</button><button class="btn" onclick="openDeviceEditor()">＋ Ny enhet</button></div>
+        </div>
+        <div class="dashboard-grid users-grid">
+          <div class="stack">
+            <div class="card"><div class="card-title"><h2>Användare</h2><span class="small muted">Kontor + produktionsoperatörer</span></div><div class="card-body" id="usersList"></div></div>
+            <div class="card"><div class="card-title"><h2>Scanner / terminal-enheter</h2><span class="small muted">Person och fysisk enhet hålls separata</span></div><div class="card-body" id="devicesList"></div></div>
+          </div>
+          <div class="card"><div class="card-title"><h2>Senaste audit</h2><button class="btn ghost" onclick="loadUsersPage()">Uppdatera</button></div><div class="card-body" id="auditList"></div></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-title"><h2 id="drawerTitle">Detaljer</h2><p id="drawerSub"></p></div>
+    <button class="icon-btn" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModal()"></div>
+<div class="modal" id="modal">
+  <div class="modal-head">
+    <div><h2 id="modalTitle">Redigera</h2><p id="modalSub"></p></div>
+    <button class="icon-btn" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-body" id="modalBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/static/app.js?v=0_8_0"></script>
+</body>
+</html>
